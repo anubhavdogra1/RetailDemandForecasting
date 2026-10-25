@@ -1,7 +1,13 @@
 .conda/
-data/
+data/*
+!data/processed/
+data/processed/*
+!data/processed/weekly_panel.parquet
+!data/processed/backtest_preds.parquet
 __pycache__/
 .ipynb_checkpoints/
 .pytest_cache/
 .env
 .DS_Store
+.agents/
+.claude/

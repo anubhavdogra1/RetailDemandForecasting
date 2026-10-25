@@ -1,0 +1,8 @@
+-r requirements.txt
+openpyxl
+matplotlib
+statsmodels
+pytest
+ipykernel
+nbformat
+nbconvert

@@ -35,7 +35,7 @@ A wholesaler must order stock ahead of demand (here, a 2-week lead time). Order 
 
 ## Run it
 ```
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 # download online_retail_ii.zip from the UCI link above and unzip into data/extracted/
 python scripts/run_all.py     # rebuild panel + backtest, print results
 pytest                        # unit tests
@@ -50,3 +50,9 @@ src/explain.py    grounded Claude explanations
 app.py            Streamlit dashboard
 newpro.ipynb      walkthrough
 ```
+
+## Deploy (Streamlit Community Cloud)
+The dashboard only needs the two small files in `data/processed/` (committed), not the raw dataset.
+1. Push this repo to GitHub.
+2. At [share.streamlit.io](https://share.streamlit.io) create an app: pick the repo, branch `main`, main file `app.py`.
+3. Optional: under **Advanced settings → Secrets** add `ANTHROPIC_API_KEY = "..."` to enable Claude explanations (limited to 5 per visitor session).

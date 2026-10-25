@@ -58,7 +58,12 @@ with tab3:
     if origins:
         origin = st.selectbox("Forecast made at week", origins, index=len(origins) - 1)
         q = st.text_input("Question", "Explain this forecast and recommend how much to stock.")
-        if st.button("Explain"):
+        MAX_EXPLAINS = 5  # per session, so a public deployment can't burn through the API budget
+        used = st.session_state.get("explains", 0)
+        if st.button("Explain", disabled=used >= MAX_EXPLAINS):
+            st.session_state["explains"] = used + 1
             feat = f.make_features(panel)
             with st.spinner("Thinking..."):
                 st.write(explain.explain(explain.build_facts(feat, preds, sku, origin, h), q))
+        if used >= MAX_EXPLAINS:
+            st.caption("Explanation limit reached for this session.")
