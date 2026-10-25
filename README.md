@@ -1,4 +1,4 @@
-# Demand forecasting & stock planning
+# Retail Demand Forecasting: 14% less excess stock at the same fill rate
 
 Forecast weekly product demand 1–4 weeks ahead for a wholesaler, then turn the forecasts into stock levels. On a backtest, the model-based policy carries **~14% less excess stock than a moving-average policy at the same fill rate**.
 
@@ -48,7 +48,7 @@ src/forecast.py   features, models, rolling-origin backtest
 src/inventory.py  stock policies and comparison
 src/explain.py    grounded Claude explanations
 app.py            Streamlit dashboard
-newpro.ipynb      walkthrough
+walkthrough.ipynb  walkthrough
 ```
 
 ## Deploy (Streamlit Community Cloud)
