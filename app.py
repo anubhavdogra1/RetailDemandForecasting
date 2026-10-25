@@ -31,7 +31,12 @@ tab1, tab2, tab3 = st.tabs(["Forecast accuracy", "Stock policy", "Product view"]
 with tab1:
     s = f.score(preds).assign(model=lambda d: d["model"].map(MODEL_NAMES))
     st.subheader("Forecast error by model (WAPE, lower is better)")
-    st.bar_chart(s.groupby("model")["wape"].mean().sort_values(), horizontal=True)
+    import altair as alt
+
+    avg = s.groupby("model", as_index=False)["wape"].mean()
+    st.altair_chart(alt.Chart(avg).mark_bar().encode(
+        y=alt.Y("model:N", sort="x", title=None, axis=alt.Axis(labelLimit=300)),
+        x=alt.X("wape:Q", title="WAPE"), tooltip=["model", alt.Tooltip("wape:Q", format=".3f")]), width="stretch")
     by_h = s.pivot_table(index="h", columns="model", values="wape").round(3)
     by_h.index.name = "Weeks ahead"
     st.dataframe(by_h, width="stretch")
