@@ -49,14 +49,29 @@ with tab3:
     sku = st.selectbox("Product", panel["StockCode"].unique(),
                        format_func=lambda c: f"{c} · {panel.loc[panel.StockCode == c, 'Description'].iat[0]}")
     h = st.radio("Horizon (weeks ahead)", [1, 2, 3, 4], index=1, horizontal=True)
-    hist = panel[panel.StockCode == sku].set_index("Week")["units"].rename("actual")
-    fc = preds[(preds.StockCode == sku) & (preds.h == h)].set_index("Week")[["gbm", "gbm_q90", "moving_avg_4"]]
-    st.line_chart(pd.concat([hist, fc], axis=1))
+    import altair as alt
+
+    hist = panel[panel.StockCode == sku][["Week", "units"]].assign(series="Actual")
+    fc = preds[(preds.StockCode == sku) & (preds.h == h)].copy()
+    fc["Week"] = fc["origin"] + pd.to_timedelta(7 * h, unit="D")  # the week being predicted, not the week it was made
+    labels = {"gbm": "Model median", "gbm_q90": "Model 90th percentile", "moving_avg_4": "4-week moving average"}
+    fc = fc.melt(id_vars="Week", value_vars=list(labels), var_name="series", value_name="units")
+    fc["series"] = fc["series"].map(labels)
+    order = ["Actual", *labels.values()]
+    color = alt.Color("series:N", sort=order, title=None,
+                      scale=alt.Scale(domain=order, range=["#4c78a8", "#59a14f", "#e15759", "#f2a900"]))
+    line = alt.Chart(hist).mark_line().encode(x=alt.X("Week:T", title=None), y=alt.Y("units:Q", title="Units per week"),
+                                               color=color)
+    pts = alt.Chart(fc).mark_point(filled=True, size=80).encode(x="Week:T", y="units:Q", color=color,
+                                                                tooltip=["series", "Week:T", alt.Tooltip("units:Q", format=",.0f")])
+    st.altair_chart(line + pts, width="stretch")
+    st.caption("Dots are backtest forecasts, plotted at the week they predicted (made " f"{h} week(s) earlier).")
 
     st.subheader("Ask about this forecast")
     origins = sorted(preds.loc[(preds.StockCode == sku) & (preds.h == h), "origin"].unique())
     if origins:
-        origin = st.selectbox("Forecast made at week", origins, index=len(origins) - 1)
+        origin = st.selectbox("Forecast made at week", origins, index=len(origins) - 1,
+                              format_func=lambda d: pd.Timestamp(d).strftime("%d %b %Y"))
         q = st.text_input("Question", "Explain this forecast and recommend how much to stock.")
         MAX_EXPLAINS = 5  # per session, so a public deployment can't burn through the API budget
         used = st.session_state.get("explains", 0)
