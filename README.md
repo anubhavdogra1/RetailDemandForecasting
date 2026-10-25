@@ -31,6 +31,8 @@ A wholesaler must order stock ahead of demand (here, a 2-week lead time). Order 
 | Moving average + safety stock | 88.8% | 102,267 | 16.8% |
 | Model 90th-percentile forecast | 88.8% | 88,422 | 15.0% |
 
+(The dashboard slider rounds the baseline's safety factor to 1.64, which shows 102,384 unsold units; the exact match is 1.638.)
+
 ## Limitations
 - One dataset, two years of history, 50 products; the 52-week seasonal lag is available for only part of the backtest.
 - The stock result is a simulation with a single order-up-to level per week. It ignores order costs, minimum order quantities, holding costs and stock carried between weeks.

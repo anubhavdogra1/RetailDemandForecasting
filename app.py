@@ -10,8 +10,8 @@ import forecast as f
 import explain
 import inventory as inv
 
-st.set_page_config(page_title="Demand Forecasting", layout="wide")
-st.title("Demand forecasting & stock planning")
+st.set_page_config(page_title="Retail Demand Forecasting", layout="wide")
+st.title("Retail Demand Forecasting")
 st.caption("UCI Online Retail II · weekly demand for the top 50 products · 8-fold rolling backtest")
 
 
@@ -22,14 +22,19 @@ def load():
     return panel, preds
 
 
+MODEL_NAMES = {"gbm": "Model (median)", "moving_avg_4": "4-week moving average", "seasonal_naive": "Same week last year"}
+POLICY_NAMES = {"moving_avg_ss": "Moving average + safety stock", "gbm_q90_stock": "Model 90th-percentile forecast"}
+
 panel, preds = load()
 tab1, tab2, tab3 = st.tabs(["Forecast accuracy", "Stock policy", "Product view"])
 
 with tab1:
-    s = f.score(preds)
-    st.subheader("WAPE by model (lower is better)")
-    st.bar_chart(s.groupby("model")["wape"].mean())
-    st.dataframe(s.pivot_table(index="h", columns="model", values="wape").round(3), width='stretch')
+    s = f.score(preds).assign(model=lambda d: d["model"].map(MODEL_NAMES))
+    st.subheader("Forecast error by model (WAPE, lower is better)")
+    st.bar_chart(s.groupby("model")["wape"].mean().sort_values(), horizontal=True)
+    by_h = s.pivot_table(index="h", columns="model", values="wape").round(3)
+    by_h.index.name = "Weeks ahead"
+    st.dataframe(by_h, width="stretch")
 
 with tab2:
     st.write("Stock for week t+2 is set at week t. The moving-average policy adds safety stock `z × recent std`; "
@@ -39,11 +44,21 @@ with tab2:
     z = st.slider("Safety factor z for moving-average policy", 0.0, 4.0, 1.64, 0.05)
     p = p.assign(moving_avg_ss=p["moving_avg_4"] + z * p["roll_std_8"].fillna(0))
     res = inv.evaluate(p, ["moving_avg_ss", "gbm_q90_stock"])
-    st.dataframe(res.style.format({"fill_rate": "{:.1%}", "overstock_units": "{:,.0f}",
-                                   "overstock_pct_of_demand": "{:.1%}", "sku_weeks_stocked_out": "{:.1%}"}),
-                 width='stretch')
-    st.info(f"Model policy fill rate: {target:.1%}. Move the slider until the baseline reaches the same fill rate "
-            "and compare overstock.")
+    base, mdl = res.iloc[0], res.iloc[1]
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Fill rate: baseline", f"{base['fill_rate']:.1%}")
+    c2.metric("Fill rate: model", f"{mdl['fill_rate']:.1%}")
+    c3.metric("Unsold units: baseline", f"{base['overstock_units']:,.0f}")
+    c4.metric("Unsold units: model", f"{mdl['overstock_units']:,.0f}",
+              f"{mdl['overstock_units'] / base['overstock_units'] - 1:+.1%} vs baseline", delta_color="inverse")
+    show = res.assign(policy=res["policy"].map(POLICY_NAMES)).rename(columns={
+        "policy": "Policy", "fill_rate": "Fill rate", "overstock_units": "Unsold units",
+        "overstock_pct_of_demand": "Unsold as % of demand", "sku_weeks_stocked_out": "Stockout rate (SKU-weeks)"})
+    st.dataframe(show.set_index("Policy").style.format({"Fill rate": "{:.1%}", "Unsold units": "{:,.0f}",
+                                                        "Unsold as % of demand": "{:.1%}",
+                                                        "Stockout rate (SKU-weeks)": "{:.1%}"}), width="stretch")
+    st.info(f"The model policy's fill rate is {target:.1%}. Move the slider until the baseline reaches the same fill "
+            "rate, then compare unsold units: that is the fair comparison (default 1.64 is about the match).")
 
 with tab3:
     sku = st.selectbox("Product", panel["StockCode"].unique(),
