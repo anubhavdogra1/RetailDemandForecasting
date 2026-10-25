@@ -1,5 +1,7 @@
 # Retail Demand Forecasting: 14% less excess stock at the same fill rate
 
+**Live demo:** https://retail-demandforecasting.streamlit.app/
+
 Forecast weekly product demand 1–4 weeks ahead for a wholesaler, then turn the forecasts into stock levels. On a backtest, the model-based policy carries **~14% less excess stock than a moving-average policy at the same fill rate**.
 
 ## Problem
