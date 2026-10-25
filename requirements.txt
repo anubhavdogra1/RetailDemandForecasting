@@ -1,0 +1,12 @@
+pandas
+scikit-learn
+openpyxl
+pyarrow
+matplotlib
+streamlit
+statsmodels
+ipykernel
+anthropic
+pytest
+nbformat
+nbconvert
